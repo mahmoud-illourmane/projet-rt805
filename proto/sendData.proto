@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package sendData;
+
+/*
+*   Compilation d'un fichier .proto :
+*   protoc -I proto --go_out=. --go-grpc_out=. proto/SendData.proto
+*/
+
+// Définition du package Go pour le code généré.
+option go_package = "proto/SendData";
+
+// Service SendData pour envoyer des données.
+service SendData {
+    rpc RpcSendData (SendDataRequest) returns (SendDataReply);
+}
+
+// Message pour l'envoi des données.
+message SendDataRequest {
+    // Numéro de champ 1.
+    string json_data = 1;
+    
+    // Numéro de champ 2.
+    string message = 2;
+}
+
+// Message pour la réponse du serveur.
+message SendDataReply {
+    string message = 1;
+}
