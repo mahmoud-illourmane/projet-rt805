@@ -14,36 +14,11 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+
+	pb "mahmoud.projet.rt0805/proto/SendData"
 )
 
-/*== Structures  ==*/
-
-// Structure pour représenter une opération
-type Operation struct {
-	Type         string `json:"type"`
-	HasSucceeded bool   `json:"has_succeeded"`
-}
-
-// Structure pour représenter un appareil avec ses opérations
-type Device struct {
-	DeviceName string      `json:"device_name"`
-	Operations []Operation `json:"operations"`
-}
-
-// Structure pour stocker les résultats
-type DeviceResults struct {
-	DeviceName   string         `json:"device_name"`
-	SuccessCount map[string]int `json:"success_count"`
-	FailureCount map[string]int `json:"failure_count"`
-}
-
-/*== END/Structures  ==*/
-
 /*== Public Functions  ==*/
-
-func PrintHelloWorld() {
-	fmt.Println("Hello, World!")
-}
 
 /*
 *	Fonction qui analyse le fichier JSON et extrait les résultats
@@ -51,8 +26,8 @@ func PrintHelloWorld() {
 *		filePath := "../donnees/journee_1.json"
 *		results, err := ParseFile(filePath)
  */
-func ParseFile(filePath string) ([]DeviceResults, error) {
-	var results []DeviceResults
+func ParseFile(filePath string) ([]pb.DeviceResults, error) {
+	var results []pb.DeviceResults
 
 	// Ouvrir le fichier JSON
 	file, err := os.Open(filePath)
@@ -68,7 +43,7 @@ func ParseFile(filePath string) ([]DeviceResults, error) {
 	}
 
 	// Décoder le contenu JSON
-	var devices []Device
+	var devices []pb.Device
 	err = json.Unmarshal(data, &devices)
 	if err != nil {
 		return results, fmt.Errorf("erreur de décodage du JSON : %v", err)
@@ -77,8 +52,8 @@ func ParseFile(filePath string) ([]DeviceResults, error) {
 	// Parcour de chaque appareil
 	for _, device := range devices {
 		// Initialisation des structures pour compter les réussites et les échecs
-		successCount := map[string]int{}
-		failureCount := map[string]int{}
+		successCount := make(map[string]int32)
+		failureCount := make(map[string]int32)
 
 		for _, operation := range device.Operations {
 			if operation.HasSucceeded {
@@ -89,7 +64,7 @@ func ParseFile(filePath string) ([]DeviceResults, error) {
 		}
 
 		// Ajout des résultats pour cet appareil
-		deviceResults := DeviceResults{
+		deviceResults := pb.DeviceResults{
 			DeviceName:   device.DeviceName,
 			SuccessCount: successCount,
 			FailureCount: failureCount,
@@ -113,7 +88,7 @@ func ParseFile(filePath string) ([]DeviceResults, error) {
 *     UPDATE: 5
 *     CREATE: 7
  */
-func DisplayResults(results []DeviceResults) {
+func DisplayResults(results []pb.DeviceResults) {
 	for _, deviceResults := range results {
 		fmt.Printf("Device Name: %s\n", deviceResults.DeviceName)
 

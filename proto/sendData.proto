@@ -10,6 +10,27 @@ package sendData;
 // Définition du package Go pour le code généré.
 option go_package = "proto/SendData";
 
+/*= Structures du message client =*/
+    // Structure pour représenter une opération
+    message Operation {
+        string type = 1;
+        bool has_succeeded = 2;
+    }
+
+    // Structure pour représenter un appareil avec ses opérations
+    message Device {
+        string device_name = 1;
+        repeated Operation operations = 2;
+    }
+
+    // Structure pour stocker les résultats
+    message DeviceResults {
+        string device_name = 1;
+        map<string, int32> success_count = 2;
+        map<string, int32> failure_count = 3;
+    }
+/*= END/Structures du message client =*/
+
 // Service SendData pour envoyer des données.
 service SendData {
     rpc RpcSendData (SendDataRequest) returns (SendDataReply);
@@ -18,7 +39,7 @@ service SendData {
 // Message pour l'envoi des données.
 message SendDataRequest {
     // Numéro de champ 1.
-    string json_data = 1;
+    DeviceResults device_results = 1;
     
     // Numéro de champ 2.
     string message = 2;

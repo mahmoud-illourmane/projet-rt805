@@ -5,6 +5,8 @@ import (
 	"path/filepath"
 	"reflect"
 	"testing"
+
+	"mahmoud.projet.rt0805/proto/SendData"
 )
 
 func TestParseFile(t *testing.T) {
@@ -23,38 +25,40 @@ func TestParseFile(t *testing.T) {
 		t.Fatalf("Erreur lors de l'écriture du fichier de test JSON : %v", err)
 	}
 
-	// Appele ParseFile avec le chemin complet du fichier de test JSON
+	// Appel de ParseFile avec le chemin complet du fichier de test JSON
 	results, err := ParseFile(testFilePath)
 	if err != nil {
 		t.Fatalf("Erreur lors de l'exécution de ParseFile : %v", err)
 	}
 
 	// Résultats attendus
-	expectedResults := []DeviceResults{
+	expectedResults := []SendData.DeviceResults{
 		{
 			DeviceName: "device_1",
-			SuccessCount: map[string]int{
+			SuccessCount: map[string]int32{
 				"CREATE": 1,
 				"UPDATE": 1,
 			},
-			FailureCount: map[string]int{
+			FailureCount: map[string]int32{
 				"DELETE": 1,
 			},
 		},
 		{
 			DeviceName: "device_2",
-			SuccessCount: map[string]int{
+			SuccessCount: map[string]int32{
 				"UPDATE": 1,
 				"DELETE": 1,
 			},
-			FailureCount: map[string]int{
+			FailureCount: map[string]int32{
 				"CREATE": 1,
 			},
 		},
 	}
 
 	// Compare les résultats obtenus aux résultats attendus
-	if !reflect.DeepEqual(results, expectedResults) {
-		t.Errorf("Les résultats obtenus ne correspondent pas aux résultats attendus. Obtenu: %v, Attendu: %v", results, expectedResults)
+	for i, result := range results {
+		if !reflect.DeepEqual(&result, &expectedResults[i]) {
+			t.Errorf("Les résultats obtenus ne correspondent pas aux résultats attendus. Obtenu: %v, Attendu: %v", result, expectedResults[i])
+		}
 	}
 }
