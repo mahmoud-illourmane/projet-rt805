@@ -42,7 +42,7 @@ message SendDataRequest {
     DeviceResults device_results = 1;
     
     // Numéro de champ 2.
-    string message = 2;
+    int32 journee = 2;
 }
 
 // Message pour la réponse du serveur.

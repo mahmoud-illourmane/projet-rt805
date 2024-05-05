@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"strconv"
 	"time"
 
 	pb "mahmoud.projet.rt0805/proto/SendData"
@@ -15,36 +16,38 @@ const (
 )
 
 func main() {
-	filePath := "../donnees/journee_1.json"
+	// Nom du fichier à traiter
+	journee := 1
+	fileName := "journee_" + strconv.Itoa(journee) + ".json"
+	filePath := "../donnees/" + fileName
 
-	results, err := ParseFile(filePath)
-	if err != nil {
-		log.Fatalf("erreur lors de l'analyse du fichier : %v", err)
+	results, erreur := ParseFile(filePath)
+	if erreur != nil {
+		log.Fatalf("erreur lors de l'analyse du fichier : %v", erreur)
 	}
 
 	// Établir une connexion avec le serveur.
-	conn, err := grpc.Dial(address, grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("Échec de la connexion : %v", err)
+	connexion, erreur := grpc.Dial(address, grpc.WithInsecure())
+	if erreur != nil {
+		log.Fatalf("Échec de la connexion : %v", erreur)
 	}
-	defer conn.Close()
-	client := pb.NewSendDataClient(conn)
+	defer connexion.Close()
+	client := pb.NewSendDataClient(connexion)
 
 	// Contact avec le serveur et recevoir une réponse.
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Convertir les résultats en un pointeur vers une tranche
-	resultsPointer := &results[0]
-	response, err := client.RpcSendData(ctx, &pb.SendDataRequest{
+	// Convertir les résultats en un pointeur
+	resultsPointer := &results[0] // Envoi du device numéro 1
+	response, erreur := client.RpcSendData(ctx, &pb.SendDataRequest{
 		DeviceResults: resultsPointer,
-		Message:       "Envoi de résultats.",
+		Journee:       1,
 	})
-
-	if err != nil {
-		log.Fatalf("Échec de l'appel : %v", err)
+	if erreur != nil {
+		log.Fatalf("Échec de l'envoi des données : %v", erreur)
 	}
-	log.Printf("Réponse : %s", response.GetMessage())
+	log.Printf("Réponse de la part du serveur : %s", response.GetMessage())
 
 	// DisplayResults(results)
 }

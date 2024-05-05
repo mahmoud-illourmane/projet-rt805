@@ -1,7 +1,7 @@
 services:
   db:
-    image: mongo
-    container_name: test-mongo
+    image: mongo:4.4 # Compatible avec ma VM.
+    container_name: mongo
     restart: always
     ports:
       - 27017:27017
