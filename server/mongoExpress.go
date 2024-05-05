@@ -7,6 +7,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+	pb "mahmoud.projet.rt0805/proto/SendData"
 )
 
 /*
@@ -87,7 +88,7 @@ func (c *MongoDBClient) Close() error {
 *	Cette méthode permet d'établir la connexion
 * 	et l'ajout de données en BD.
  */
-func addDataToMongoDB() {
+func addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName string) {
 	uri := "mongodb://root:root@10.22.9.96:27017/"
 
 	// Créer un client MongoDB
@@ -99,17 +100,17 @@ func addDataToMongoDB() {
 
 	// Créer des données à insérer
 	data := Data{
-		Day:        1,
-		DeviceName: "971645e6-6870-4db6-9e6b-817227d8f338",
+		Day:        int(journee),
+		DeviceName: deviceName,
 		SuccessCounts: []OperationCount{
-			{Key: "CREATE", Value: 11},
-			{Key: "DELETE", Value: 5},
-			{Key: "UPDATE", Value: 8},
+			{Key: "CREATE", Value: int(deviceResults.SuccessCount["CREATE"])},
+			{Key: "DELETE", Value: int(deviceResults.SuccessCount["DELETE"])},
+			{Key: "UPDATE", Value: int(deviceResults.SuccessCount["UPDATE"])},
 		},
 		FailureCounts: []OperationCount{
-			{Key: "CREATE", Value: 3},
-			{Key: "DELETE", Value: 2},
-			{Key: "UPDATE", Value: 1},
+			{Key: "CREATE", Value: int(deviceResults.FailureCount["CREATE"])},
+			{Key: "DELETE", Value: int(deviceResults.FailureCount["DELETE"])},
+			{Key: "UPDATE", Value: int(deviceResults.FailureCount["UPDATE"])},
 		},
 	}
 

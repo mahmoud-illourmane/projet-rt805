@@ -18,28 +18,28 @@ type Server struct {
 // RpcSendData est la méthode qui reçoit les données envoyées par le client.
 func (s *Server) RpcSendData(ctx context.Context, req *pb.SendDataRequest) (*pb.SendDataReply, error) {
 	// Reception des données de la requête
-	// deviceResults := req.DeviceResults
-	// journee := req.Journee
-	// deviceName := req.DeviceResults.DeviceName
+	deviceResults := req.DeviceResults
+	journee := req.Journee
+	deviceName := req.DeviceResults.DeviceName
 
 	// Extraire success_count CREATE de la requête
-	successCountCREATE := req.DeviceResults.SuccessCount
+	// successCountCREATE := req.DeviceResults.SuccessCount
 
 	// Rechercher la clé "CREATE" dans success_count
-	createValue, exists := successCountCREATE["CREATE"]
-	if exists {
-		fmt.Printf("success_count CREATE : {key:\"CREATE\" value:%d}\n", createValue)
-	} else {
-		fmt.Println("La clé 'CREATE' n'existe pas dans success_count\n")
-	}
+	// createValue, exists := successCountCREATE["CREATE"]
+	// if exists {
+	// 	fmt.Printf("success_count CREATE : {key:\"CREATE\" value:%d}\n", createValue)
+	// } else {
+	// 	fmt.Println("La clé 'CREATE' n'existe pas dans success_count\n")
+	// }
 
-	// fmt.Println("Device Name : \n", deviceName)
+	// Affiche les données reçues
+	fmt.Println("Données reçu :\n")
+	fmt.Println("  Device Name : ", deviceName)
+	fmt.Println("  Journée : ", journee)
+	fmt.Println("\n  Données :\n", deviceResults)
 
-	// // Affiche les données reçues
-	// fmt.Println("Données reçu :\nJournée :", journee)
-	// fmt.Println("Données :\n", deviceResults)
-
-	addDataToMongoDB()
+	addDataToMongoDB(deviceResults, journee, deviceName)
 	// TODO
 
 	// Réponse au client
@@ -65,7 +65,7 @@ func main() {
 	pb.RegisterSendDataServer(grpcServer, &Server{})
 
 	// Démarre le serveur et écoute les connexions entrantes
-	log.Printf("Serveur gRPC en écoute sur %s...", address)
+	log.Printf("Serveur gRPC en écoute sur %s", address)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("échec du démarrage du serveur : %v", err)
 	}
