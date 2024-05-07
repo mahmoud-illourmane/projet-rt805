@@ -21,6 +21,7 @@ func main() {
 	fileName := "journee_" + strconv.Itoa(journee) + ".json"
 	filePath := "../donnees/" + fileName
 
+	// Extractions des données depuis le fichier.
 	results, erreur := ParseFile(filePath)
 	if erreur != nil {
 		log.Fatalf("erreur lors de l'analyse du fichier : %v", erreur)
@@ -38,16 +39,19 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Convertir les résultats en un pointeur
-	resultsPointer := &results[0] // Envoi du device numéro 1
+	// Créeation d'un tableau de pointeurs
+	var resultsPointers []*pb.DeviceResults
+	for i := range results {
+		resultsPointers = append(resultsPointers, &results[i])
+	}
+
+	// Envoi de la requête gRPC
 	response, erreur := client.RpcSendData(ctx, &pb.SendDataRequest{
-		DeviceResults: resultsPointer,
+		DeviceResults: resultsPointers,
 		Journee:       1,
 	})
 	if erreur != nil {
 		log.Fatalf("Échec de l'envoi des données : %v", erreur)
 	}
 	log.Printf("Réponse de la part du serveur : %s", response.GetMessage())
-
-	// DisplayResults(results)
 }

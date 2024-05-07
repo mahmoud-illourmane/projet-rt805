@@ -39,7 +39,7 @@ service SendData {
 // Message pour l'envoi des données.
 message SendDataRequest {
     // Numéro de champ 1.
-    DeviceResults device_results = 1;
+    repeated DeviceResults device_results = 1;
     
     // Numéro de champ 2.
     int32 journee = 2;
