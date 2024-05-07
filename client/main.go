@@ -48,7 +48,7 @@ func main() {
 	// Envoi de la requête gRPC
 	response, erreur := client.RpcSendData(ctx, &pb.SendDataRequest{
 		DeviceResults: resultsPointers,
-		Journee:       1,
+		Journee:       int32(journee),
 	})
 	if erreur != nil {
 		log.Fatalf("Échec de l'envoi des données : %v", erreur)

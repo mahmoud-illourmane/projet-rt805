@@ -5,8 +5,10 @@ import (
 	"fmt"
 	"log"
 
+	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
+
 	pb "mahmoud.projet.rt0805/proto/SendData"
 )
 
@@ -18,7 +20,7 @@ import (
 *
  */
 
-/* Structures de MongoDB */
+/*==== Structures de MongoDB ====*/
 
 type MongoDBClient struct {
 	client *mongo.Client
@@ -36,12 +38,14 @@ type Data struct {
 	FailureCounts []OperationCount `bson:"failure_counts"`
 }
 
+/*==== END/Structures de MongoDB ====*/
+
 /*
 *	Cette méthode établi la connexion avec la BD.
 *	Elle prend en paramètre l'url de connexion
  */
 func NewMongoDBClient(uri string) (*MongoDBClient, error) {
-	// Créer une instance de client MongoDB
+	// Crée une instance de client MongoDB
 	clientOptions := options.Client().ApplyURI(uri)
 	// Etabli une connexion
 	client, err := mongo.Connect(context.Background(), clientOptions)
@@ -49,7 +53,7 @@ func NewMongoDBClient(uri string) (*MongoDBClient, error) {
 		return nil, err
 	}
 
-	// Vérifier la connexion
+	// Vérification de la connexion
 	err = client.Ping(context.Background(), nil)
 	if err != nil {
 		return nil, err
@@ -57,6 +61,14 @@ func NewMongoDBClient(uri string) (*MongoDBClient, error) {
 
 	fmt.Println("Connecté à MongoDB")
 	return &MongoDBClient{client: client}, nil
+}
+
+/*
+*	Cette méthode permet de fermer la connexion à MongoDB.
+ */
+func (c *MongoDBClient) Close() error {
+	// Fermer la connexion MongoDB
+	return c.client.Disconnect(context.Background())
 }
 
 /*
@@ -77,27 +89,38 @@ func (c *MongoDBClient) InsertData(databaseName, collectionName string, data Dat
 }
 
 /*
-*	Cette méthode permet de fermer la connexion.
+* Fonction qui affiche les données de manière
+* indifférente en fonction du nom du dispositif
  */
-func (c *MongoDBClient) Close() error {
-	// Fermer la connexion MongoDB
-	return c.client.Disconnect(context.Background())
+func (c *MongoDBClient) GetDataByDeviceName(databaseName, collectionName, deviceName string) error {
+	collection := c.client.Database(databaseName).Collection(collectionName)
+
+	filter := bson.D{{Key: "device_name", Value: deviceName}}
+	cursor, err := collection.Find(context.Background(), filter)
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	fmt.Printf("Données pour le dispositif '%s' :\n", deviceName)
+	for cursor.Next(context.Background()) {
+		var data Data
+		if err := cursor.Decode(&data); err != nil {
+			return err
+		}
+		fmt.Printf("Journée : %d, SuccessCounts : %v, FailureCounts : %v\n", data.Day, data.SuccessCounts, data.FailureCounts)
+	}
+	if cursor.Err() != nil {
+		return cursor.Err()
+	}
+	return nil
 }
 
 /*
 *	Cette méthode permet d'établir la connexion
 * 	et l'ajout de données en BD.
  */
-func addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName string) {
-	uri := "mongodb://root:root@10.22.9.96:27017/"
-
-	// Créer un client MongoDB
-	client, erreur := NewMongoDBClient(uri)
-	if erreur != nil {
-		log.Fatalf("Erreur lors de la création du client MongoDB : %v", erreur)
-	}
-	defer client.Close()
-
+func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName string) {
 	// Créer des données à insérer
 	data := Data{
 		Day:        int(journee),
@@ -115,8 +138,32 @@ func addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName
 	}
 
 	// Insérer les données dans la base de données
-	erreur = client.InsertData("projet-805", "devices_data", data)
+	erreur := c.InsertData("projet-805", "devices_data", data)
 	if erreur != nil {
 		log.Fatalf("Erreur lors de l'insertion des données : %v", erreur)
 	}
+}
+
+func (c *MongoDBClient) GetAllData(databaseName, collectionName string) error {
+	collection := c.client.Database(databaseName).Collection(collectionName)
+
+	cursor, err := collection.Find(context.Background(), bson.D{})
+	if err != nil {
+		return err
+	}
+	defer cursor.Close(context.Background())
+
+	fmt.Println("Données extraites :")
+	for cursor.Next(context.Background()) {
+		var data Data
+		if err := cursor.Decode(&data); err != nil {
+			return err
+		}
+		fmt.Printf("Journée : %d, Nom du dispositif : %s, SuccessCounts : %v, FailureCounts : %v\n",
+			data.Day, data.DeviceName, data.SuccessCounts, data.FailureCounts)
+	}
+	if cursor.Err() != nil {
+		return cursor.Err()
+	}
+	return nil
 }

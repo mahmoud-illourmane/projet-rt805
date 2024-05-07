@@ -13,6 +13,14 @@ import (
 // Server est la structure qui implémente l'interface SendData définie dans votre fichier `.proto`.
 type Server struct {
 	pb.UnimplementedSendDataServer
+	mongoClient *MongoDBClient
+}
+
+// Constructeur pour Server
+func NewServer(client *MongoDBClient) *Server {
+	return &Server{
+		mongoClient: client,
+	}
 }
 
 // RpcSendData est la méthode qui reçoit les données envoyées par le client.
@@ -28,7 +36,7 @@ func (s *Server) RpcSendData(ctx context.Context, req *pb.SendDataRequest) (*pb.
 			successCount := deviceResult.SuccessCount
 			failureCount := deviceResult.FailureCount
 
-			addDataToMongoDB(deviceResult, req.Journee, deviceName)
+			// s.mongoClient.addDataToMongoDB(deviceResult, req.Journee, deviceName)
 
 			// Affichages
 			fmt.Printf("\nNom de l'appareil : %s\n", deviceName)
@@ -45,8 +53,24 @@ func (s *Server) RpcSendData(ctx context.Context, req *pb.SendDataRequest) (*pb.
 }
 
 func main() {
-	// Adresse et le port sur lesquels le serveur écoutera
-	address := "localhost:50051"
+	/*== CONNEXION A LA BD ==*/
+	uri := "mongodb://root:root@10.22.9.96:27017/"
+	// Création d'un client MongoDB
+	client, erreur := NewMongoDBClient(uri)
+	if erreur != nil {
+		log.Fatalf("Erreur lors de la création du client MongoDB : %v", erreur)
+	}
+	// Cette méthode assure que la fonction close sera appelé juste avant que la fonction se termine.
+	defer client.Close()
+
+	/*== Affichage des résultats ==*/
+	err := client.GetDataByDeviceName("projet-805", "devices_data", "c1153f7a-b060-4215-bf22-601e8f8e704c")
+	if err != nil {
+		log.Fatalf("Echec GetDataByDeviceName : %v", err)
+	}
+
+	/*== SERVER gRPC ==*/
+	address := "localhost:50051" // Adresse et le port sur lesquels le serveur écoutera
 
 	// Listener TCP sur l'adresse et le port
 	lis, err := net.Listen("tcp", address)
@@ -57,8 +81,11 @@ func main() {
 	// Création du serveur gRPC
 	grpcServer := grpc.NewServer()
 
+	// Création d'une instance de Server avec le client MongoDB
+	server := NewServer(client)
+
 	// Enregistre le service `SendData` sur le serveur
-	pb.RegisterSendDataServer(grpcServer, &Server{})
+	pb.RegisterSendDataServer(grpcServer, server)
 
 	// Démarre le serveur et écoute les connexions entrantes
 	log.Printf("Serveur gRPC en écoute sur %s", address)
