@@ -27,7 +27,7 @@ func main() {
 		log.Fatalf("erreur lors de l'analyse du fichier : %v", erreur)
 	}
 
-	// Établir une connexion avec le serveur.
+	// Établissement d'une connexion avec le serveur.
 	connexion, erreur := grpc.Dial(address, grpc.WithInsecure())
 	if erreur != nil {
 		log.Fatalf("Échec de la connexion : %v", erreur)
@@ -35,11 +35,11 @@ func main() {
 	defer connexion.Close()
 	client := pb.NewSendDataClient(connexion)
 
-	// Contact avec le serveur et recevoir une réponse.
+	// Création d'un contexte
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 
-	// Créeation d'un tableau de pointeurs
+	// Création d'un tableau de pointeurs
 	var resultsPointers []*pb.DeviceResults
 	for i := range results {
 		resultsPointers = append(resultsPointers, &results[i])

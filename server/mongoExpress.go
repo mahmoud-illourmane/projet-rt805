@@ -72,23 +72,6 @@ func (c *MongoDBClient) Close() error {
 }
 
 /*
-*	Cette méthode d'insérer les données.
- */
-func (c *MongoDBClient) InsertData(databaseName, collectionName string, data Data) error {
-	// Obtenir la collection
-	collection := c.client.Database(databaseName).Collection(collectionName)
-
-	// Insérer les données
-	_, err := collection.InsertOne(context.Background(), data)
-	if err != nil {
-		return err
-	}
-
-	fmt.Println("Données insérées avec succès")
-	return nil
-}
-
-/*
 * Fonction qui affiche les données de manière
 * indifférente en fonction du nom du dispositif
  */
@@ -118,10 +101,10 @@ func (c *MongoDBClient) GetDataByDeviceName(databaseName, collectionName, device
 
 /*
 *	Cette méthode permet d'établir la connexion
-* 	et l'ajout de données en BD.
+* 	et met à jour les données existantes ou insère de nouvelles données.
  */
 func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName string) {
-	// Créer des données à insérer
+	// Créer les données à insérer ou mettre à jour
 	data := Data{
 		Day:        int(journee),
 		DeviceName: deviceName,
@@ -137,13 +120,38 @@ func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journe
 		},
 	}
 
-	// Insérer les données dans la base de données
-	erreur := c.InsertData("projet-805", "devices_data", data)
-	if erreur != nil {
-		log.Fatalf("Erreur lors de l'insertion des données : %v", erreur)
+	// Filtre spécifique
+	filter := bson.M{
+		"day":        journee,
+		"deviceName": deviceName,
+	}
+
+	// Mettre à jour les champs SuccessCounts et FailureCounts
+	update := bson.M{
+		"$set": bson.M{
+			"successCounts": data.SuccessCounts,
+			"failureCounts": data.FailureCounts,
+		},
+	}
+
+	// Options pour upsert
+	options := options.Update().SetUpsert(true)
+
+	// Mise à jour ou insertion (upsert)
+	_, err := c.client.Database("projet-805").Collection("devices_data").UpdateOne(context.Background(), filter, update, options)
+
+	// Vérification des erreurs
+	if err != nil {
+		log.Fatalf("Erreur lors de la mise à jour ou de l'insertion des données : %v", err)
+	} else {
+		fmt.Println("Données mises à jour ou insérées avec succès")
 	}
 }
 
+/*
+* Cette fonction affiche toutes les données
+* qui se trouve en BD
+**/
 func (c *MongoDBClient) GetAllData(databaseName, collectionName string) error {
 	collection := c.client.Database(databaseName).Collection(collectionName)
 

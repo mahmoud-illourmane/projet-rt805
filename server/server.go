@@ -26,17 +26,30 @@ func NewServer(client *MongoDBClient) *Server {
 // RpcSendData est la méthode qui reçoit les données envoyées par le client.
 func (s *Server) RpcSendData(ctx context.Context, req *pb.SendDataRequest) (*pb.SendDataReply, error) {
 	if req.DeviceResults == nil {
-		log.Fatalf("Erreur : aucune donnée n'est accessible")
+		log.Fatalf("Erreur : Aucune donnée n'est disponible.")
+		// Réponse au client
+		return &pb.SendDataReply{
+			Message: "Erreur : Aucune donnée n'est disponible.",
+		}, nil
+	}
+
+	verif := VerifyData(req)
+	if !verif {
+		log.Fatalf("Erreur : Les données reçues ne sont pas correctes.")
+		// Réponse au client
+		return &pb.SendDataReply{
+			Message: "Erreur : Les données reçues ne sont pas correctes.",
+		}, nil
 	}
 
 	for _, deviceResult := range req.DeviceResults {
 		// Vérifie que deviceResult n'est pas nil pour éviter des erreurs de référence nil
 		if deviceResult != nil {
 			deviceName := deviceResult.DeviceName
-			successCount := deviceResult.SuccessCount
+			successCount := deviceResult.SuccessCount["CREATE"]
 			failureCount := deviceResult.FailureCount
 
-			// s.mongoClient.addDataToMongoDB(deviceResult, req.Journee, deviceName)
+			s.mongoClient.addDataToMongoDB(deviceResult, req.Journee, deviceName)
 
 			// Affichages
 			fmt.Printf("\nNom de l'appareil : %s\n", deviceName)
@@ -64,10 +77,10 @@ func main() {
 	defer client.Close()
 
 	/*== Affichage des résultats ==*/
-	err := client.GetDataByDeviceName("projet-805", "devices_data", "c1153f7a-b060-4215-bf22-601e8f8e704c")
-	if err != nil {
-		log.Fatalf("Echec GetDataByDeviceName : %v", err)
-	}
+	// err := client.GetDataByDeviceName("projet-805", "devices_data", "c1153f7a-b060-4215-bf22-601e8f8e704c")
+	// if err != nil {
+	// 	log.Fatalf("Echec GetDataByDeviceName : %v", err)
+	// }
 
 	/*== SERVER gRPC ==*/
 	address := "localhost:50051" // Adresse et le port sur lesquels le serveur écoutera
