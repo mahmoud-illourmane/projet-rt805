@@ -23,7 +23,9 @@ func NewServer(client *MongoDBClient) *Server {
 	}
 }
 
-// RpcSendData est la méthode qui reçoit les données envoyées par le client.
+/*
+* RpcSendData est la méthode qui reçoit les données envoyées par le client.
+ */
 func (s *Server) RpcSendData(ctx context.Context, req *pb.SendDataRequest) (*pb.SendDataReply, error) {
 	if req.DeviceResults == nil {
 		log.Fatalf("Erreur : Aucune donnée n'est disponible.")

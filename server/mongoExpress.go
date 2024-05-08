@@ -104,7 +104,7 @@ func (c *MongoDBClient) GetDataByDeviceName(databaseName, collectionName, device
 * 	et met à jour les données existantes ou insère de nouvelles données.
  */
 func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journee int32, deviceName string) {
-	// Créer les données à insérer ou mettre à jour
+	// Création des données à insérer ou à mettre à jour
 	data := Data{
 		Day:        int(journee),
 		DeviceName: deviceName,
@@ -120,7 +120,7 @@ func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journe
 		},
 	}
 
-	// Filtre spécifique
+	// Filtre
 	filter := bson.M{
 		"day":        journee,
 		"deviceName": deviceName,
