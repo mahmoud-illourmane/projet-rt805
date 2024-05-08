@@ -2,6 +2,12 @@
 
 Projet universitaire RT0805 : Initiation au protocole gRPC en Go.
 
+## Prérequis
+
+Assurez-vous d'installer les éléments suivants avant de commencer :
+- **Go**
+- **MongoDB**
+
 ## Configuration Docker
 
 Pour créer un conteneur MongoDB, utilisez Docker Compose. 
