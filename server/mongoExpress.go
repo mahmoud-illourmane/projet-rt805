@@ -122,7 +122,6 @@ func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journe
 
 	// Filtre
 	filter := bson.M{
-		"day":        journee,
 		"deviceName": deviceName,
 	}
 
@@ -143,8 +142,6 @@ func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journe
 	// Vérification des erreurs
 	if err != nil {
 		log.Fatalf("Erreur lors de la mise à jour ou de l'insertion des données : %v", err)
-	} else {
-		fmt.Println("Données mises à jour ou insérées avec succès")
 	}
 }
 
@@ -153,25 +150,58 @@ func (c *MongoDBClient) addDataToMongoDB(deviceResults *pb.DeviceResults, journe
 * qui se trouve en BD
 **/
 func (c *MongoDBClient) GetAllData(databaseName, collectionName string) error {
+	// Accès à la collection
 	collection := c.client.Database(databaseName).Collection(collectionName)
 
-	cursor, err := collection.Find(context.Background(), bson.D{})
+	// Récuperation de toutes les données de la collection
+	cursor, err := collection.Find(context.Background(), bson.M{})
 	if err != nil {
+		log.Printf("Erreur lors de la recherche des données : %v", err)
 		return err
 	}
 	defer cursor.Close(context.Background())
 
 	fmt.Println("Données extraites :")
+
+	// Parcour les documents renvoyés par le curseur
 	for cursor.Next(context.Background()) {
-		var data Data
-		if err := cursor.Decode(&data); err != nil {
+		var data struct {
+			DeviceName    string `bson:"deviceName"`
+			SuccessCounts []struct {
+				Key   string `bson:"key"`
+				Value int    `bson:"value"`
+			} `bson:"successCounts"`
+			FailureCounts []struct {
+				Key   string `bson:"key"`
+				Value int    `bson:"value"`
+			} `bson:"failureCounts"`
+		}
+
+		// Décode les données dans la variable data
+		err = cursor.Decode(&data)
+		if err != nil {
+			log.Printf("Erreur lors du décodage des données : %v", err)
 			return err
 		}
-		fmt.Printf("Journée : %d, Nom du dispositif : %s, SuccessCounts : %v, FailureCounts : %v\n",
-			data.Day, data.DeviceName, data.SuccessCounts, data.FailureCounts)
+
+		// Affiche les données extraites
+		fmt.Printf("Nom du dispositif : %s\n", data.DeviceName)
+		fmt.Println("SuccessCounts :")
+		for _, count := range data.SuccessCounts {
+			fmt.Printf("    %s : %d\n", count.Key, count.Value)
+		}
+		fmt.Println("FailureCounts :")
+		for _, count := range data.FailureCounts {
+			fmt.Printf("    %s : %d\n", count.Key, count.Value)
+		}
+		fmt.Println()
 	}
-	if cursor.Err() != nil {
-		return cursor.Err()
+
+	// Vérifie si le curseur a rencontré une erreur lors de l'itération
+	if err = cursor.Err(); err != nil {
+		log.Printf("Erreur lors de l'itération des données : %v", err)
+		return err
 	}
+
 	return nil
 }
