@@ -14,7 +14,7 @@ import (
 
 /*
 *
-*	Classe qui me pert d'établir une connexion à la base de donnée MongoDB.
+*	Classe qui me permet d'établir une connexion à la base de donnée MongoDB.
 *	Elle se charge également de définir les fonctions d'intéractions
 *	avec la base de donnée.
 *
